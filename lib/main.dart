@@ -25,6 +25,19 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    FirebaseDynamicLinks.instance.onLink.listen(
+      (pendingDynamicLinkData) {
+        final Uri deepLink = pendingDynamicLinkData.link;
+
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text("from event: $deepLink")));
+          setState(() => link = deepLink.path);
+        }
+
+        print(deepLink.path);
+      },
+    );
     getInitialLink();
   }
 
@@ -40,17 +53,6 @@ class _MyAppState extends State<MyApp> {
       setState(() => link = deepLink.path);
       print(deepLink.path);
     }
-
-    FirebaseDynamicLinks.instance.onLink.listen(
-      (pendingDynamicLinkData) {
-        final Uri deepLink = pendingDynamicLinkData.link;
-
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("from init: $deepLink")));
-        setState(() => link = deepLink.path);
-        print(deepLink.path);
-      },
-    );
   }
 
   @override

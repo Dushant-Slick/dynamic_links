@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +11,13 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
   runApp(const MyApp());
 }
 
@@ -62,7 +70,24 @@ class _MyAppState extends State<MyApp> {
       home: Builder(builder: (context) {
         return Scaffold(
           body: Center(
-            child: Text(link),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(link),
+                const SizedBox(height: 10.0),
+                ElevatedButton(
+                  onPressed: () {
+                    try {
+                      throw Exception('Throw Test Exception');
+                    } on Exception catch (e) {
+                      FirebaseCrashlytics.instance.recordFlutterError(
+                          FlutterErrorDetails(exception: e));
+                    }
+                  },
+                  child: const Text("Throw Test Exception"),
+                ),
+              ],
+            ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () async {
